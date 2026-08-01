@@ -17,8 +17,23 @@ const app = express()
 
 app.use(morgan("dev"))
 app.use(express.json())
+
+const allowedOrigins = [
+    "https://snitch-b1zz.onrender.com",
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://localhost:3000",
+    process.env.CLIENT_URL,
+].filter(Boolean);
+
 app.use(cors({
-    origin: "http://localhost:5173",
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.includes(origin) || allowedOrigins.some(o => origin.endsWith('.onrender.com'))) {
+            callback(null, true);
+        } else {
+            callback(null, true);
+        }
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
 }))
@@ -26,7 +41,7 @@ app.use(cors({
 passport.use(new GoogleStrategy({
     clientID: config.CLIENT_ID,
     clientSecret: config.CLIENT_SECRET,
-    callbackURL: "http://localhost:3000/api/auth/google/callback",
+    callbackURL: process.env.GOOGLE_CALLBACK_URL || "https://snitch-b1zz.onrender.com/api/auth/google/callback",
 }, async (accessToken, refreshToken, profile, done) => {
     try {
         const email = profile.emails?.[0]?.value;
