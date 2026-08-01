@@ -7,6 +7,7 @@ import { Strategy as GoogleStrategy } from "passport-google-oauth20"
 import { config } from "./config/config.js"
 import path from "path"
 import { fileURLToPath } from "url"
+import fs from "fs"
 
 import userModel from "./models/user.model.js"
 import authRouter from "./routes/auth.routes.js"
@@ -94,7 +95,12 @@ app.use(passport.initialize());
 app.use(cookieParser())
 
 // Serve frontend static files
-app.use(express.static(path.join(__dirname, "../../Frontend/dist")))
+const frontendDistPath = path.join(__dirname, "../../Frontend/dist")
+const frontendIndexPath = path.join(frontendDistPath, "index.html")
+
+if (fs.existsSync(frontendDistPath)) {
+    app.use(express.static(frontendDistPath))
+}
 
 app.use("/api/auth", authRouter)
 app.use("/api/products", productRouter)
@@ -103,7 +109,11 @@ app.use("/api/address", addressRouter)
 
 // Catch-all: serve frontend index.html for client-side routing
 app.get("{*path}", (req, res) => {
-    res.sendFile(path.join(__dirname, "../../Frontend/dist/index.html"))
+    if (fs.existsSync(frontendIndexPath)) {
+        res.sendFile(frontendIndexPath)
+    } else {
+        res.status(404).send("Frontend build not found. Ensure frontend is built into Frontend/dist.")
+    }
 })
 
 export default app
