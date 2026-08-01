@@ -8,6 +8,7 @@ import { config } from "./config/config.js"
 import path from "path"
 import { fileURLToPath } from "url"
 import fs from "fs"
+import { execSync } from "child_process"
 
 import userModel from "./models/user.model.js"
 import authRouter from "./routes/auth.routes.js"
@@ -102,7 +103,22 @@ const candidatePaths = [
     path.join(process.cwd(), "dist")
 ];
 
-const frontendDistPath = candidatePaths.find(p => fs.existsSync(path.join(p, "index.html"))) || candidatePaths[0];
+let frontendDistPath = candidatePaths.find(p => fs.existsSync(path.join(p, "index.html")));
+
+if (!frontendDistPath) {
+    console.log("[Auto-Build] Frontend dist not found. Triggering automated build...");
+    const frontendDir = path.resolve(__dirname, "../../Frontend");
+    if (fs.existsSync(path.join(frontendDir, "package.json"))) {
+        try {
+            execSync("npm install && npm run build", { cwd: frontendDir, stdio: "inherit" });
+            console.log("[Auto-Build] Frontend built successfully!");
+        } catch (err) {
+            console.error("[Auto-Build] Failed to build frontend automatically:", err);
+        }
+    }
+    frontendDistPath = candidatePaths.find(p => fs.existsSync(path.join(p, "index.html"))) || candidatePaths[0];
+}
+
 const frontendIndexPath = path.join(frontendDistPath, "index.html");
 
 if (fs.existsSync(frontendDistPath)) {
