@@ -4,15 +4,15 @@ import cookieParser from "cookie-parser"
 import cors from "cors"
 import passport from "passport"
 import { Strategy as GoogleStrategy } from "passport-google-oauth20"
-import { config } from "./config/config.js"
+import { config } from "../src/config/config.js"
 import path from "path"
 import { fileURLToPath } from "url"
 
-import userModel from "./models/user.model.js"
-import authRouter from "./routes/auth.routes.js"
-import productRouter from "./routes/product.routes.js"
-import cartRouter from "./routes/cart.routes.js"
-import addressRouter from "./routes/address.routes.js"
+import userModel from "../src/models/user.model.js"
+import authRouter from "../src/routes/auth.routes.js"
+import productRouter from "../src/routes/product.routes.js"
+import cartRouter from "../src/routes/cart.routes.js"
+import addressRouter from "../src/routes/address.routes.js"
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
