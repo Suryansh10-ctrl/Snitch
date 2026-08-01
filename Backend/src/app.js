@@ -95,8 +95,15 @@ app.use(passport.initialize());
 app.use(cookieParser())
 
 // Serve frontend static files
-const frontendDistPath = path.join(__dirname, "../../Frontend/dist")
-const frontendIndexPath = path.join(frontendDistPath, "index.html")
+const candidatePaths = [
+    path.join(__dirname, "../../Frontend/dist"),
+    path.join(process.cwd(), "Frontend/dist"),
+    path.join(process.cwd(), "../Frontend/dist"),
+    path.join(process.cwd(), "dist")
+];
+
+const frontendDistPath = candidatePaths.find(p => fs.existsSync(path.join(p, "index.html"))) || candidatePaths[0];
+const frontendIndexPath = path.join(frontendDistPath, "index.html");
 
 if (fs.existsSync(frontendDistPath)) {
     app.use(express.static(frontendDistPath))
