@@ -33,6 +33,9 @@ export const useCart = () => {
       }
       return data;
     } catch (err) {
+      if (err.response?.status === 401) {
+        return null;
+      }
       console.error("Failed to fetch cart:", err);
     }
   }

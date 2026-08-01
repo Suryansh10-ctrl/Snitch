@@ -6,6 +6,14 @@ const cartApiInstance = axios.create({
     withCredentials: true
 });
 
+cartApiInstance.interceptors.request.use((config) => {
+    const token = localStorage.getItem("token");
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+}, (error) => Promise.reject(error));
+
 export const addItem = async ({ productId, variantId, quantity = 1, attributes, color, size }) => {
     const cleanProductId = String(productId).split("_")[0];
     const isMongoHex = variantId && /^[0-9a-fA-F]{24}$/.test(String(variantId));

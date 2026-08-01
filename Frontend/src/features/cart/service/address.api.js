@@ -6,6 +6,14 @@ const addressApiInstance = axios.create({
     withCredentials: true
 });
 
+addressApiInstance.interceptors.request.use((config) => {
+    const token = localStorage.getItem("token");
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+}, (error) => Promise.reject(error));
+
 export const getUserAddressesApi = async () => {
     const response = await addressApiInstance.get("/");
     return response.data;
