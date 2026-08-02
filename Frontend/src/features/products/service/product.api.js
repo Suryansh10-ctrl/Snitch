@@ -6,6 +6,14 @@ const productApiInstance = axios.create({
     withCredentials: true,
 })
 
+productApiInstance.interceptors.request.use((config) => {
+    const token = localStorage.getItem("token");
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+}, (error) => Promise.reject(error));
+
 export async function createProducts(formData) {
     const response = await productApiInstance.post('/', formData)
     return response.data

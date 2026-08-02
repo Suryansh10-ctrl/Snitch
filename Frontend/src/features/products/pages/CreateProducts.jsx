@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback } from "react";
 import { useProduct } from "../hooks/useProduct";
 import { useAuth } from "../../auth/hooks/useAuth";
 import { useNavigate } from "react-router";
+import { useSelector } from "react-redux";
 import toast from "react-hot-toast";
 
 const CURRENCIES = ["INR", "USD", "EUR", "GBP"];
@@ -11,6 +12,7 @@ const CreateProducts = () => {
   const { handleCreateProduct } = useProduct();
   const { handleLogout } = useAuth();
   const navigate = useNavigate();
+  const user = useSelector((state) => state.auth?.user);
 
   const [formData, setFormData] = useState({
     title: "",
