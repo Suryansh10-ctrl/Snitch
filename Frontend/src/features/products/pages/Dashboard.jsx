@@ -117,6 +117,27 @@ const Dashboard = () => {
     }
   };
 
+  const getProductStock = (product) => {
+    if (Array.isArray(product?.variants) && product.variants.length > 0) {
+      return product.variants.reduce((acc, v) => acc + (Number(v.stock) || 0), 0);
+    }
+    return product?.stock !== undefined && product?.stock !== null ? Number(product.stock) : 0;
+  };
+
+  const getProductValuation = (product) => {
+    const basePrice = Number(product?.price?.amount) || 0;
+    if (Array.isArray(product?.variants) && product.variants.length > 0) {
+      const variantTotal = product.variants.reduce((acc, v) => {
+        const vPrice = Number(v.price) || basePrice;
+        const vStock = Number(v.stock) || 0;
+        return acc + (vPrice * (vStock > 0 ? vStock : 1));
+      }, 0);
+      return variantTotal > 0 ? variantTotal : basePrice;
+    }
+    const stock = getProductStock(product);
+    return basePrice * (stock > 0 ? stock : 1);
+  };
+
   const filteredProducts = sellerProducts.filter((item) => {
     const q = searchQuery.toLowerCase().trim();
     const matchesSearch =
@@ -125,9 +146,7 @@ const Dashboard = () => {
       item.color?.toLowerCase().includes(q) ||
       item.description?.toLowerCase().includes(q);
 
-    const totalStock = Array.isArray(item.variants)
-      ? item.variants.reduce((acc, v) => acc + (v.stock || 0), 0)
-      : 10;
+    const totalStock = getProductStock(item);
 
     let matchesStock = true;
     if (stockFilter === "IN_STOCK") matchesStock = totalStock > 5;
@@ -137,7 +156,12 @@ const Dashboard = () => {
   });
 
   const totalCatalogValue = sellerProducts.reduce(
-    (acc, p) => acc + (Number(p.price?.amount) || 0),
+    (acc, p) => acc + getProductValuation(p),
+    0
+  );
+
+  const totalCatalogUnits = sellerProducts.reduce(
+    (acc, p) => acc + getProductStock(p),
     0
   );
 
@@ -329,34 +353,79 @@ const Dashboard = () => {
             </div>
 
             {/* Bento Grid Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="md:col-span-2 bg-white p-6 rounded-3xl shadow-sm border border-slate-200 flex flex-col justify-between group hover:shadow-md transition-shadow">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+              {/* Card 1: Total Catalog Value */}
+              <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 flex flex-col justify-between group hover:shadow-md transition-shadow">
                 <div className="flex justify-between items-start">
                   <div>
-                    <p className="text-xs font-semibold text-slate-500 mb-1">Total Catalog Value</p>
+                    <p className="text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">Total Catalog Value</p>
                     <h4 className="text-2xl sm:text-3xl font-extrabold text-[#000613]">
                       {formatCurrency(totalCatalogValue, "INR")}
                     </h4>
                   </div>
-                  <div className="p-3 bg-amber-50 text-[#964900] rounded-2xl font-bold text-lg">
+                  <div className="p-3 bg-amber-50 text-[#964900] rounded-2xl font-bold">
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </div>
                 </div>
-
-                <div className="mt-6 h-20 flex items-end gap-2">
-                  <div className="flex-1 bg-slate-100 rounded-t-lg h-[40%]" />
-                  <div className="flex-1 bg-[#ff851b] rounded-t-lg h-[90%]" />
-                  <div className="flex-1 bg-slate-100 rounded-t-lg h-[70%]" />
-                </div>
+                <p className="text-[11px] font-semibold text-slate-400 mt-4">
+                  Valuation of total catalog inventory
+                </p>
               </div>
 
-              <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 flex flex-col justify-between">
-                <div>
-                  <p className="text-xs font-semibold text-slate-500 mb-1">Active Products</p>
-                  <h4 className="text-2xl sm:text-3xl font-extrabold text-[#000613]">{sellerProducts.length}</h4>
+              {/* Card 2: Total Inventory Units */}
+              <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 flex flex-col justify-between group hover:shadow-md transition-shadow">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">Total Inventory Stock</p>
+                    <h4 className="text-2xl sm:text-3xl font-extrabold text-[#000613]">{totalCatalogUnits} <span className="text-sm font-bold text-slate-400">Units</span></h4>
+                  </div>
+                  <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl font-bold">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                  </div>
                 </div>
+                <p className="text-[11px] font-semibold text-slate-400 mt-4">
+                  In-stock item units across all variants
+                </p>
+              </div>
+
+              {/* Card 3: Active Products */}
+              <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 flex flex-col justify-between group hover:shadow-md transition-shadow">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">Active Products</p>
+                    <h4 className="text-2xl sm:text-3xl font-extrabold text-[#000613]">{sellerProducts.length} <span className="text-sm font-bold text-slate-400">Listings</span></h4>
+                  </div>
+                  <div className="p-3 bg-emerald-50 text-emerald-600 rounded-2xl font-bold">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                  </div>
+                </div>
+                <p className="text-[11px] font-semibold text-slate-400 mt-4">
+                  Total published items in catalog
+                </p>
+              </div>
+
+              {/* Card 4: Orders Received */}
+              <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 flex flex-col justify-between group hover:shadow-md transition-shadow">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">Orders Received</p>
+                    <h4 className="text-2xl sm:text-3xl font-extrabold text-[#000613]">{sellerOrders.length} <span className="text-sm font-bold text-slate-400">Orders</span></h4>
+                  </div>
+                  <div className="p-3 bg-purple-50 text-purple-600 rounded-2xl font-bold">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                    </svg>
+                  </div>
+                </div>
+                <p className="text-[11px] font-semibold text-slate-400 mt-4">
+                  Total customer orders processed
+                </p>
               </div>
             </div>
 
@@ -418,9 +487,7 @@ const Dashboard = () => {
                       : "";
 
                   const variantCount = Array.isArray(product.variants) ? product.variants.length : 0;
-                  const totalStock = Array.isArray(product.variants)
-                    ? product.variants.reduce((acc, v) => acc + (v.stock || 0), 0)
-                    : 10;
+                  const totalStock = getProductStock(product);
 
                   return (
                     <div key={product._id} className="bg-white rounded-2xl border border-slate-200 p-3.5 space-y-3 shadow-sm">
@@ -531,9 +598,7 @@ const Dashboard = () => {
                             : "";
 
                         const variantCount = Array.isArray(product.variants) ? product.variants.length : 0;
-                        const totalStock = Array.isArray(product.variants)
-                          ? product.variants.reduce((acc, v) => acc + (v.stock || 0), 0)
-                          : 10;
+                        const totalStock = getProductStock(product);
 
                         return (
                           <tr key={product._id} className="hover:bg-slate-50 transition-colors">
