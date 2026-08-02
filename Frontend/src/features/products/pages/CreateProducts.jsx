@@ -136,14 +136,19 @@ const CreateProducts = () => {
       <aside className="hidden md:flex h-full w-64 flex-col bg-[#f3f4f5] border-r border-slate-200 transition-all duration-300 shrink-0">
         <div className="p-4 flex flex-col h-full gap-2">
           
-          <div className="mb-4">
-            <h1
-              onClick={() => navigate("/")}
-              className="text-lg font-extrabold text-[#000613] tracking-tight cursor-pointer"
-            >
-              Seller Center
-            </h1>
-            <p className="text-slate-500 text-[11px] font-semibold">Premium Merchant Suite</p>
+          {/* Header Profile */}
+          <div className="mb-4 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-[#001f3f] text-white flex items-center justify-center font-bold text-sm shadow-sm shrink-0">
+              {(user?.fullname || user?.email || "M")[0].toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <h1 className="text-base font-extrabold text-[#000613] tracking-tight truncate">
+                Seller Center
+              </h1>
+              <p className="text-slate-500 text-[11px] font-semibold truncate">
+                {user?.fullname || "Premium Merchant"}
+              </p>
+            </div>
           </div>
 
           <nav className="flex flex-col gap-1 flex-grow">
@@ -151,44 +156,54 @@ const CreateProducts = () => {
               onClick={() => navigate("/seller/dashboard")}
               className="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-200/60 rounded-xl transition-all font-semibold text-xs text-left"
             >
-              <span>📊</span>
-              <span>Dashboard Overview</span>
+              <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+              </svg>
+              <span>Dashboard</span>
             </button>
 
             <button
               onClick={() => navigate("/seller/dashboard")}
               className="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-200/60 rounded-xl transition-all font-semibold text-xs text-left"
             >
-              <span>📦</span>
-              <span>Products & Catalog</span>
-            </button>
-
-            <button
-              onClick={() => navigate("/seller/create-product")}
-              className="flex items-center gap-3 px-4 py-3 bg-[#ff851b] text-white rounded-xl font-bold text-xs text-left shadow-sm"
-            >
-              <span>➕</span>
-              <span>Add New Product</span>
+              <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+              </svg>
+              <span>Products</span>
             </button>
 
             <button
               onClick={() => navigate("/")}
               className="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-200/60 rounded-xl transition-all font-semibold text-xs text-left"
             >
-              <span>🛍️</span>
-              <span>Buyer Storefront</span>
+              <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              </svg>
+              <span>View Storefront</span>
             </button>
           </nav>
 
-          <div className="mt-auto border-t border-slate-200 pt-3 flex flex-col gap-1">
+          <div className="mt-auto space-y-2 pt-3 border-t border-slate-200">
+            <button
+              onClick={() => navigate("/seller/create-product")}
+              className="w-full bg-[#ff851b] hover:bg-[#e07010] text-white font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 text-xs shadow-md transition-all"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              <span>Add Product</span>
+            </button>
+
             <button
               onClick={async () => {
                 await handleLogout();
                 navigate("/login");
               }}
-              className="flex items-center gap-3 px-4 py-2.5 text-red-600 hover:bg-red-50 rounded-xl transition-all font-semibold text-xs text-left"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-xl transition-all font-semibold text-xs text-left"
             >
-              <span>🚪</span>
+              <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
               <span>Logout</span>
             </button>
           </div>
