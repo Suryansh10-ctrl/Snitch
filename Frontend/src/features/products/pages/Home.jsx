@@ -7,6 +7,7 @@ import { addToCart } from "../../cart/state/cart.slice";
 import CartDrawer from "../../cart/components/CartDrawer";
 import { useCart } from "../../cart/hooks/useCart";
 import toast from "react-hot-toast";
+import { useFeedback } from "../hooks/useFeedback";
 
 const Home = () => {
     const dispatch = useDispatch();
@@ -16,6 +17,14 @@ const Home = () => {
     const { handlegetAllProducts } = useProduct();
     const { handleGetCart } = useCart();
     const { handleLogout } = useAuth();
+    const {
+        feedbacks: userFeedbacks,
+        isFeedbackOwner,
+        handleGetFeedbacks,
+        handleCreateFeedback,
+        handleUpdateFeedback,
+        handleDeleteFeedback: triggerDeleteFeedback
+    } = useFeedback();
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
 
@@ -39,62 +48,10 @@ const Home = () => {
     const [feedbackName, setFeedbackName] = useState("");
     const [feedbackComment, setFeedbackComment] = useState("");
     const [feedbackStartIndex, setFeedbackStartIndex] = useState(0);
-    const [userFeedbacks, setUserFeedbacks] = useState([
-        {
-            id: 1,
-            name: "Emma Watson",
-            rating: 5,
-            category: "Product Quality",
-            comment: "The craftsmanship of the Oversized Linen Shirt is unbelievable. Delivered to London in 3 days!",
-            role: "Verified Buyer",
-            date: "2 days ago"
-        },
-        {
-            id: 2,
-            name: "Marcus Chen",
-            rating: 5,
-            category: "Delivery & Shipping",
-            comment: "Finding authentic streetwear and fast delivery in one place is amazing. 10/10 service!",
-            role: "Verified Buyer",
-            date: "1 week ago"
-        },
-        {
-            id: 3,
-            name: "Sophia Loren",
-            rating: 5,
-            category: "Sizing & Fit",
-            comment: "The oversized fit guidance was spot on. Premium fabric texture and great packaging.",
-            role: "Verified Buyer",
-            date: "2 weeks ago"
-        },
-        {
-            id: 4,
-            name: "Aarav Sharma",
-            rating: 5,
-            category: "Product Quality",
-            comment: "The quality of Snitch denim jackets is top tier. Extremely comfortable fabric for everyday wear.",
-            role: "Verified Buyer",
-            date: "3 weeks ago"
-        },
-        {
-            id: 5,
-            name: "Jessica Taylor",
-            rating: 5,
-            category: "Customer Support",
-            comment: "Had a small issue with sizing exchange, but customer support resolved it in less than an hour!",
-            role: "Verified Buyer",
-            date: "1 month ago"
-        },
-        {
-            id: 6,
-            name: "Vikram Malhotra",
-            rating: 5,
-            category: "Delivery & Shipping",
-            comment: "Lightning fast delivery! The package arrived neatly wrapped with zero hassle.",
-            role: "Verified Buyer",
-            date: "1 month ago"
-        }
-    ]);
+
+    useEffect(() => {
+        handleGetFeedbacks();
+    }, []);
 
     const openNewFeedbackModal = () => {
         setEditingFeedbackId(null);
@@ -106,7 +63,12 @@ const Home = () => {
     };
 
     const openEditFeedbackModal = (fb) => {
-        setEditingFeedbackId(fb.id);
+        if (!isFeedbackOwner(fb)) {
+            toast.error("You can only edit your own feedback.");
+            return;
+        }
+        const targetId = fb._id || fb.id;
+        setEditingFeedbackId(targetId);
         setFeedbackRating(fb.rating || 5);
         setFeedbackCategory(fb.category || "Product Quality");
         setFeedbackName(fb.name || "");
@@ -114,49 +76,31 @@ const Home = () => {
         setIsFeedbackModalOpen(true);
     };
 
-    const handleDeleteFeedback = (id) => {
-        setUserFeedbacks((prev) => prev.filter((item) => item.id !== id));
-        toast.success("Feedback deleted successfully! 🗑️");
+    const handleDeleteFeedback = async (fb) => {
+        await triggerDeleteFeedback(fb);
         setFeedbackStartIndex((prev) => Math.max(0, Math.min(prev, userFeedbacks.length - 4)));
     };
 
-    const handleFeedbackSubmit = (e) => {
+    const handleFeedbackSubmit = async (e) => {
         e.preventDefault();
         if (!feedbackComment.trim()) {
             toast.error("Please enter your feedback comments.");
             return;
         }
 
-        if (editingFeedbackId) {
-            setUserFeedbacks((prev) =>
-                prev.map((fb) =>
-                    fb.id === editingFeedbackId
-                        ? {
-                              ...fb,
-                              name: feedbackName || fb.name,
-                              rating: feedbackRating,
-                              category: feedbackCategory,
-                              comment: feedbackComment,
-                              date: "Edited just now"
-                          }
-                        : fb
-                )
-            );
-            toast.success("Feedback updated successfully! ✏️");
-        } else {
-            const newFeedback = {
-                id: Date.now(),
-                name: feedbackName || user?.fullname || user?.name || user?.email?.split("@")[0] || "Valued Customer",
-                rating: feedbackRating,
-                category: feedbackCategory,
-                comment: feedbackComment,
-                role: "Verified Buyer",
-                date: "Just now"
-            };
+        const payload = {
+            name: feedbackName || user?.fullname || user?.name || user?.email?.split("@")[0] || "Valued Customer",
+            rating: feedbackRating,
+            category: feedbackCategory,
+            comment: feedbackComment
+        };
 
-            setUserFeedbacks([newFeedback, ...userFeedbacks]);
+        if (editingFeedbackId) {
+            const targetFb = userFeedbacks.find((fb) => (fb._id || fb.id) === editingFeedbackId);
+            await handleUpdateFeedback(editingFeedbackId, payload, targetFb);
+        } else {
+            await handleCreateFeedback(payload);
             setFeedbackStartIndex(0);
-            toast.success("Thank you! Your feedback has been submitted successfully. 🌟");
         }
 
         setIsFeedbackModalOpen(false);
@@ -978,25 +922,27 @@ const Home = () => {
                                             <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
                                                 {fb.category}
                                             </span>
-                                            {/* Action Buttons: Edit & Delete */}
-                                            <div className="flex items-center gap-1 opacity-90 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => openEditFeedbackModal(fb)}
-                                                    className="p-1 text-slate-400 hover:text-slate-800 transition-colors"
-                                                    title="Edit Feedback"
-                                                >
-                                                    <i className="ri-pencil-line text-sm"></i>
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleDeleteFeedback(fb.id)}
-                                                    className="p-1 text-slate-400 hover:text-red-600 transition-colors"
-                                                    title="Delete Feedback"
-                                                >
-                                                    <i className="ri-delete-bin-line text-sm"></i>
-                                                </button>
-                                            </div>
+                                            {/* Action Buttons: Edit & Delete - Only visible to feedback owner */}
+                                            {isFeedbackOwner(fb) && (
+                                                <div className="flex items-center gap-1 opacity-90 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => openEditFeedbackModal(fb)}
+                                                        className="p-1 text-slate-400 hover:text-slate-800 transition-colors"
+                                                        title="Edit Feedback"
+                                                    >
+                                                        <i className="ri-pencil-line text-sm"></i>
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleDeleteFeedback(fb)}
+                                                        className="p-1 text-slate-400 hover:text-red-600 transition-colors"
+                                                        title="Delete Feedback"
+                                                    >
+                                                        <i className="ri-delete-bin-line text-sm"></i>
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                     <p className="text-xs text-slate-700 leading-relaxed italic">

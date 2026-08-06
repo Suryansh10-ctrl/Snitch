@@ -15,6 +15,7 @@ import authRouter from "./routes/auth.routes.js"
 import productRouter from "./routes/product.routes.js"
 import cartRouter from "./routes/cart.routes.js"
 import addressRouter from "./routes/address.routes.js"
+import feedbackRouter from "./routes/feedback.routes.js"
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -129,6 +130,7 @@ app.use("/api/auth", authRouter)
 app.use("/api/products", productRouter)
 app.use("/api/cart", cartRouter)
 app.use("/api/address", addressRouter)
+app.use("/api/feedback", feedbackRouter)
 
 // Catch-all: serve frontend index.html for client-side routing
 app.get("{*path}", (req, res) => {

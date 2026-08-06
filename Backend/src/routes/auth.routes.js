@@ -28,19 +28,24 @@ authrouter.get('/google/callback', (req, res, next) => {
             message: "Google OAuth credentials (CLIENT_ID / CLIENT_SECRET) are not configured in Backend .env file."
         });
     }
-    const clientUrl = process.env.CLIENT_URL || "https://snitch-b1zz.onrender.com";
-    passport.authenticate('google', { session: false,
-        failureRedirect: `${clientUrl}/login?error=GoogleAuthFailed`,
-     }, (err, user, info) => {
+    const clientUrl = process.env.CLIENT_URL || req.headers.referer?.split("/api")[0] || "http://localhost:5173";
+    passport.authenticate('google', { session: false }, (err, user, info) => {
         if (err || !user) {
+            console.error("Google Authentication Callback Error:", err || info);
             return res.redirect(`${clientUrl}/login?error=GoogleAuthFailed`);
         }
+        const userId = user._id || user.id;
         const token = jwt.sign(
-            { id: user.id, displayName: user.displayName, email: user.emails?.[0]?.value },
+            { id: userId },
             config.JWT_SECRET,
             { expiresIn: '7d' }
         );
-        res.cookie('token', token);
+        res.cookie('token', token, {
+            httpOnly: false,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            maxAge: 7 * 24 * 60 * 60 * 1000
+        });
         return res.redirect(`${clientUrl}/?token=${token}`);
     })(req, res, next);
 });
