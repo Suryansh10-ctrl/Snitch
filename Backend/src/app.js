@@ -49,7 +49,7 @@ app.use(cors({
 passport.use(new GoogleStrategy({
     clientID: config.CLIENT_ID,
     clientSecret: config.CLIENT_SECRET,
-    callbackURL: process.env.GOOGLE_CALLBACK_URL || "https://snitch-b1zz.onrender.com/api/auth/google/callback",
+    callbackURL: process.env.GOOGLE_CALLBACK_URL || "/api/auth/google/callback",
 }, async (accessToken, refreshToken, profile, done) => {
     try {
         const email = profile.emails?.[0]?.value;
@@ -105,7 +105,20 @@ const candidatePaths = [
 ];
 
 const getFrontendDistPath = () => {
-    return candidatePaths.find(p => fs.existsSync(path.join(p, "index.html")));
+    let dist = candidatePaths.find(p => fs.existsSync(path.join(p, "index.html")));
+    if (!dist) {
+        const frontendDir = path.resolve(__dirname, "../../Frontend");
+        if (fs.existsSync(path.join(frontendDir, "package.json"))) {
+            try {
+                console.log("[Auto-Build] Frontend dist not found. Triggering build...");
+                execSync("npm install --include=dev && npm run build", { cwd: frontendDir, stdio: "inherit" });
+                dist = candidatePaths.find(p => fs.existsSync(path.join(p, "index.html")));
+            } catch (err) {
+                console.error("[Auto-Build] Automated build error:", err?.message || err);
+            }
+        }
+    }
+    return dist;
 };
 
 app.use((req, res, next) => {

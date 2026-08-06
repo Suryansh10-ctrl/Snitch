@@ -28,7 +28,9 @@ authrouter.get('/google/callback', (req, res, next) => {
             message: "Google OAuth credentials (CLIENT_ID / CLIENT_SECRET) are not configured in Backend .env file."
         });
     }
-    const clientUrl = process.env.CLIENT_URL || req.headers.referer?.split("/api")[0] || "http://localhost:5173";
+    const host = req.get('host') || '';
+    const isLocal = host.includes('localhost') || host.includes('127.0.0.1');
+    const clientUrl = process.env.CLIENT_URL || (isLocal ? "http://localhost:5173" : "https://snitch-b1zz.onrender.com");
     passport.authenticate('google', { session: false }, (err, user, info) => {
         if (err || !user) {
             console.error("Google Authentication Callback Error:", err || info);
