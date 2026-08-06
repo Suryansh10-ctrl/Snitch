@@ -22,6 +22,7 @@ const __dirname = path.dirname(__filename)
 
 const app = express()
 
+app.set("trust proxy", 1);
 
 app.use(morgan("dev"))
 app.use(express.json())
@@ -49,7 +50,7 @@ app.use(cors({
 passport.use(new GoogleStrategy({
     clientID: config.CLIENT_ID,
     clientSecret: config.CLIENT_SECRET,
-    callbackURL: process.env.GOOGLE_CALLBACK_URL || "/api/auth/google/callback",
+    callbackURL: process.env.GOOGLE_CALLBACK_URL || (process.env.NODE_ENV === "production" ? "https://snitch-b1zz.onrender.com/api/auth/google/callback" : "/api/auth/google/callback"),
 }, async (accessToken, refreshToken, profile, done) => {
     try {
         const email = profile.emails?.[0]?.value;
