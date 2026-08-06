@@ -96,7 +96,7 @@ app.use(passport.initialize());
 
 app.use(cookieParser())
 
-// Serve frontend static files
+// Serve frontend static files dynamically
 const candidatePaths = [
     path.join(__dirname, "../../Frontend/dist"),
     path.join(process.cwd(), "Frontend/dist"),
@@ -104,27 +104,18 @@ const candidatePaths = [
     path.join(process.cwd(), "dist")
 ];
 
-let frontendDistPath = candidatePaths.find(p => fs.existsSync(path.join(p, "index.html")));
+const getFrontendDistPath = () => {
+    return candidatePaths.find(p => fs.existsSync(path.join(p, "index.html")));
+};
 
-if (!frontendDistPath) {
-    console.log("[Auto-Build] Frontend dist not found. Triggering automated build...");
-    const frontendDir = path.resolve(__dirname, "../../Frontend");
-    if (fs.existsSync(path.join(frontendDir, "package.json"))) {
-        try {
-            execSync("npm install && npm run build", { cwd: frontendDir, stdio: "inherit" });
-            console.log("[Auto-Build] Frontend built successfully!");
-        } catch (err) {
-            console.error("[Auto-Build] Failed to build frontend automatically:", err);
-        }
+app.use((req, res, next) => {
+    const distPath = getFrontendDistPath();
+    if (distPath) {
+        express.static(distPath)(req, res, next);
+    } else {
+        next();
     }
-    frontendDistPath = candidatePaths.find(p => fs.existsSync(path.join(p, "index.html"))) || candidatePaths[0];
-}
-
-const frontendIndexPath = path.join(frontendDistPath, "index.html");
-
-if (fs.existsSync(frontendDistPath)) {
-    app.use(express.static(frontendDistPath))
-}
+});
 
 app.use("/api/auth", authRouter)
 app.use("/api/products", productRouter)
@@ -133,12 +124,18 @@ app.use("/api/address", addressRouter)
 app.use("/api/feedback", feedbackRouter)
 
 // Catch-all: serve frontend index.html for client-side routing
-app.get("{*path}", (req, res) => {
-    if (fs.existsSync(frontendIndexPath)) {
-        res.sendFile(frontendIndexPath)
-    } else {
-        res.status(404).send("Frontend build not found. Ensure frontend is built into Frontend/dist.")
+app.use((req, res) => {
+    if (req.path.startsWith("/api")) {
+        return res.status(404).json({ message: "API endpoint not found" });
     }
-})
+    const distPath = getFrontendDistPath();
+    if (distPath) {
+        const indexPath = path.join(distPath, "index.html");
+        if (fs.existsSync(indexPath)) {
+            return res.sendFile(indexPath);
+        }
+    }
+    return res.status(404).send("Frontend build not found. Ensure frontend is built into Frontend/dist.");
+});
 
 export default app
