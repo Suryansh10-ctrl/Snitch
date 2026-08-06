@@ -2,7 +2,10 @@ import dotenv from "dotenv"
 dotenv.config()
 
 import dns from "dns"
-dns.setServers(["8.8.8.8"]);
+try {
+    dns.setDefaultResultOrder?.("ipv4first");
+    dns.setServers(["8.8.8.8", "1.1.1.1", "8.8.4.4"]);
+} catch (e) {}
 
 import app from "./src/app.js";
 import { connectDB } from "./src/config/database.js";
